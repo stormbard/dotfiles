@@ -48,7 +48,23 @@ cloneForWorkTrees() {
   git for-each-ref --format='%(refname:short)' refs/heads |  xargs -n1 -I{} git branch --set-upstream-to=$remoteName/{} {}
 }
 
+isGitWorktreeCommand() {
+  #worktreeCommands=$(git worktree 2>&1 | cut -d ':' -f 2 | sed 's/^ //g' | cut -d ' ' -f 3 | grep -ve '^$' | grep -qe "^$1$")
+  git worktree 2>&1 | cut -d ':' -f 2 | sed 's/^ //g' | cut -d ' ' -f 3 | grep -ve '^$' | grep -qe "^$1$" || echo $1 | grep -qe "^repair$"
+}
+
+changeWorktree() {
+  cd $1
+}
+
 gitArgs=()
+if [ $# -eq 0 ]
+then
+  usage
+  exit 1
+fi
+git rev-parse > /dev/null
+
 while [[ $# -gt 0 ]]; do
   case $1 in
     clone)
@@ -56,10 +72,39 @@ while [[ $# -gt 0 ]]; do
       cloneForWorkTrees $@
       shift $#
     ;;
+    add)
+      shift
+      worktreeRoot=$(cd `git rev-parse --path-format=relative --git-common-dir`/.. && pwd)
+      worktreeDir=$1
+      shift
+      git worktree add $worktreeRoot/$worktreeDir $@
+      test -d $wortreeRoot/.vscode && ln -s $worktreeRoot/.vscode $worktreeRoot/$worktreeDir/.vscode
+      test -f $worktreeRoot/.env && cp $worktreeRoot/.env $worktreeRoot/$worktreeDir/
+      shift $#
+    ;;
+    switch)
+      shift
+      if [ -n "$1" ]
+      then
+        directory=$(git worktree list --porcelain | awk '/'"$1"'/ {print}' | grep worktree | sed 's/worktree //')
+        test -n "${directory}" && echo " cd $directory" || echo "No directory found for worktree $1"
+      else
+        echo "Include worktree to swap to."
+        exit 2
+      fi
+      shift $#
+    ;;
     *)
-      echo "Unknown command $1"
-      usage
-      exit 1
+      isGitWorktreeCommand $1
+      if [ $? -eq 0 ]
+      then
+        git worktree $@
+        shift $#
+      else
+        echo "Unknown command $1"
+        usage
+        exit 1
+      fi
     ;;
   esac
 done

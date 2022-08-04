@@ -1,0 +1,59 @@
+#!/bin/sh
+set -x
+trap exit ERR
+
+createBranch() {
+  local branchName=$1
+
+  git fetch
+  git checkout -b "$branchName" master
+}
+
+createMR() {
+  local branchName=$(git branch --show-current)
+  local openAfter=$1
+  local remoteName=${2:-origin}
+
+  # GitLab Specific Push Options: https://docs.gitlab.com/ee/user/project/push_options.html
+  # Explanation of the below pipe black magic: https://serverfault.com/questions/989742/tee-and-assigning-to-variable/989827#989827
+  { mergeRequestURL=$(git push -o merge_request.create -o merge_request.target=master --set-upstream "$remoteName" "$branchName" 2>&1 | tee /dev/fd/3 | grep merge_request | cut -d ':' -f2,3 | tr -d ' '); } 3>&1
+
+  # Open Merge Request URL
+  test "$openAfter" = "yes" && open -u "$mergeRequestURL"
+}
+while [ $# -gt 0 ]
+do
+  case $1 in
+    mr)
+      shift
+      case $1 in
+        create)
+          shift
+          branchName=
+          openAfter=no
+          remainingArgs=()
+          while [ $# -gt 0 ]
+          do
+            case $1 in
+              -b)
+                shift
+                branchName=$1
+                shift
+              ;;
+              -o|--open)
+                shift
+                openAfter=yes
+              ;;
+              *)
+                remainingArgs+=("$1")
+                shift
+              ;;
+            esac
+          done
+          test -n "$branchName" && createBranch $branchName
+          createMR $openAfter $remainingArgs
+        ;;
+      esac
+    ;;
+  esac
+done
