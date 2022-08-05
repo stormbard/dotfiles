@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+
 trap exit ERR
 
 createBranch() {
@@ -40,7 +40,7 @@ do
                 branchName=$1
                 shift
               ;;
-              -o|--open)
+              -O|--open)
                 shift
                 openAfter=yes
               ;;
