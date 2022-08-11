@@ -2,6 +2,8 @@
 
 trap exit ERR
 
+OPENCMD=$(which xdg-open || which open)
+
 createBranch() {
   local branchName=$1
 
@@ -19,7 +21,7 @@ createMR() {
   { mergeRequestURL=$(git push -o merge_request.create -o merge_request.target=master --set-upstream "$remoteName" "$branchName" 2>&1 | tee /dev/fd/3 | grep merge_request | cut -d ':' -f2,3 | tr -d ' '); } 3>&1
 
   # Open Merge Request URL
-  test "$openAfter" = "yes" && open -u "$mergeRequestURL"
+  test "$openAfter" = "yes" && $OPENCMD "$mergeRequestURL"
 }
 while [ $# -gt 0 ]
 do
