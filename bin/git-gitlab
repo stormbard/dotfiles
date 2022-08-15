@@ -6,19 +6,21 @@ OPENCMD=$(which xdg-open || which open)
 
 createBranch() {
   local branchName=$1
+  local remoteName=${2}
 
   git fetch
-  git checkout -b "$branchName" master
+  git checkout --no-track -b "$branchName" "$remoteName/master"
 }
 
 createMR() {
   local branchName=$(git branch --show-current)
   local openAfter=$1
-  local remoteName=${2:-origin}
+  local remoteName=${2}
+  shift 2
 
   # GitLab Specific Push Options: https://docs.gitlab.com/ee/user/project/push_options.html
   # Explanation of the below pipe black magic: https://serverfault.com/questions/989742/tee-and-assigning-to-variable/989827#989827
-  { mergeRequestURL=$(git push -o merge_request.create -o merge_request.target=master --set-upstream "$remoteName" "$branchName" 2>&1 | tee /dev/fd/3 | grep merge_request | cut -d ':' -f2,3 | tr -d ' '); } 3>&1
+  { mergeRequestURL=$(git push -o merge_request.create -o merge_request.target=master $@ --set-upstream "$remoteName" "$branchName" 2>&1 | tee /dev/fd/3 | grep merge_request | cut -d ':' -f2,3 | tr -d ' '); } 3>&1
 
   # Open Merge Request URL
   test "$openAfter" = "yes" && $OPENCMD "$mergeRequestURL"
@@ -32,12 +34,13 @@ do
         create)
           shift
           branchName=
+          remoteName="origin"
           openAfter=no
           remainingArgs=()
           while [ $# -gt 0 ]
           do
             case $1 in
-              -b)
+              -b|--branch)
                 shift
                 branchName=$1
                 shift
@@ -46,14 +49,23 @@ do
                 shift
                 openAfter=yes
               ;;
+              -r|--remote)
+                shift
+                remoteName=$1
+                shift
+              ;;
+              --)
+                shift
+                break
+              ;;              
               *)
                 remainingArgs+=("$1")
                 shift
               ;;
             esac
           done
-          test -n "$branchName" && createBranch $branchName
-          createMR $openAfter $remainingArgs
+          test -n "$branchName" && createBranch $branchName $remoteName
+          createMR $openAfter $remoteName $@
         ;;
       esac
     ;;
