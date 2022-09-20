@@ -1,0 +1,57 @@
+#!/bin/sh
+
+trap exit ERR
+
+interactive=false
+dryRun=false
+while [[ $# -gt 0 ]]
+do
+  case $1 in
+    -i|--interactive)
+      interactive=true
+      shift
+    ;;
+    -n|--dry-run)
+      dryRun=true
+      shift
+    ;;
+    *)
+      echo "Unknown argument $1."
+      exit 2
+    ;;
+  esac
+done
+
+pruneLocalBranches() {
+  for branch in $(git for-each-ref --format='%(if:equals=gone)%(upstream:track,nobracket)%(then)%(refname:short)%(end)' | grep .)
+  do
+    if [ "$dryRun" = "true" ]
+    then
+      echo "[would prune] $branch"
+    else
+      if [ "$interactive" = true ]
+      then
+        read -p "Do you want to delete branch: $branch?(y/n|yes/no)" deleteIt
+        if [ "$deleteIt" = "yes" ] || [ "$deleteIt" = "y" ]
+        then
+          git branch -D $branch
+        fi
+      else
+        git branch -D $branch
+      fi
+    fi
+  done
+}
+
+if [ "$dryRun" = "true" ]
+then
+  git fetch --prune --dry-run
+  pruneLocalBranches
+else
+  git fetch --prune
+  pruneLocalBranches
+fi
+  
+
+#git fetch --prune
+#LANG=en git branch --format='%(if:equals=gone)%(upstream:track,nobracket)%(then)%(refname:short)%(end)' | grep '.' | xargs git branch -D

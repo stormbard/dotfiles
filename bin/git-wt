@@ -6,22 +6,27 @@
 
 trap exit ERR
 
+if [ "$DEBUG" = "true" ]
+then
+  set -x
+fi
+
 usage() {
   echo "$0 <clone> <gitCommandOptions>"
 }
 
 cloneForWorkTrees() {
   gitCloneArgs=()
-  while [[ $1 != "--" ]] && [[ $# -gt 2 ]]; do
+  while [[ "$1" != "--" ]] && [[ $# -gt 2 ]]; do
     gitCloneArgs+=("$1")
     shift
   done
 
-  if [ $1 = '--' ]; then
+  if [ "$1" = '--' ]; then
     gitCloneArgs+=("$1")
     shift
   fi
-  if [[ ! $1 =~ .*\.git ]]; then
+  if [[ ! "$1" =~ .*\.git ]]; then
     gitCloneArgs+=("$1")
     shift
   fi
@@ -51,6 +56,13 @@ cloneForWorkTrees() {
 isGitWorktreeCommand() {
   #worktreeCommands=$(git worktree 2>&1 | cut -d ':' -f 2 | sed 's/^ //g' | cut -d ' ' -f 3 | grep -ve '^$' | grep -qe "^$1$")
   git worktree 2>&1 | cut -d ':' -f 2 | sed 's/^ //g' | cut -d ' ' -f 3 | grep -ve '^$' | grep -qe "^$1$" || echo $1 | grep -qe "^repair$"
+}
+
+isMasterWT() {
+  local currentWT=$(git rev-parse --show-toplevel)
+  local masterWT=$(git worktree list --porcelain | awk '/worktree.*master/ {print}' | sed 's/worktree //')
+
+  test $currentWT = $masterWT && echo "true" || echo "false"
 }
 
 changeWorktree() {
@@ -93,6 +105,23 @@ while [[ $# -gt 0 ]]; do
         exit 2
       fi
       shift $#
+    ;;
+    branch)
+      shift
+      inMasterWT=$(isMasterWT)
+      if [ $inMasterWT = "true" ]
+      then
+        echo "You are on master WT just refreshing current WT"
+        git pull
+      elif [ -n "$1" ]
+      then
+        git fetch
+        git checkout -b $1 --no-track origin/master
+        shift
+      else
+        echo "Provide a new branch name."
+        exit 3
+      fi
     ;;
     *)
       isGitWorktreeCommand $1
