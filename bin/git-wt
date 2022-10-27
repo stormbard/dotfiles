@@ -53,6 +53,37 @@ cloneForWorkTrees() {
   git for-each-ref --format='%(refname:short)' refs/heads |  xargs -n1 -I{} git branch --set-upstream-to=$remoteName/{} {}
 }
 
+customWorkTreeAdd() {
+  gitWorkTreeAddArgs=()
+  remainingArgs=()
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --*)
+        gitWorkTreeAddArgs+=("$1")
+        shift
+      ;;
+      -b|-B)
+        gitWorkTreeAddArgs+=("$1")
+        shift
+        gitWorkTreeAddArgs+=("$1")
+        shift
+      ;;
+      *)
+        remainingArgs+=("$1")
+        shift
+      ;;
+    esac
+  done
+
+  set -- "${remainingArgs[@]}"
+  worktreeRoot=$(cd `git rev-parse --path-format=relative --git-common-dir`/.. && pwd)
+  worktreeDir=$1
+  shift
+  git worktree add $gitWorkTreeAddArgs $worktreeRoot/$worktreeDir $@
+  test -d $wortreeRoot/.vscode && ln -s $worktreeRoot/.vscode $worktreeRoot/$worktreeDir/.vscode
+  test -f $worktreeRoot/.env && cp $worktreeRoot/.env $worktreeRoot/$worktreeDir/
+}
+
 isGitWorktreeCommand() {
   #worktreeCommands=$(git worktree 2>&1 | cut -d ':' -f 2 | sed 's/^ //g' | cut -d ' ' -f 3 | grep -ve '^$' | grep -qe "^$1$")
   git worktree 2>&1 | cut -d ':' -f 2 | sed 's/^ //g' | cut -d ' ' -f 3 | grep -ve '^$' | grep -qe "^$1$" || echo $1 | grep -qe "^repair$"
@@ -86,12 +117,7 @@ while [[ $# -gt 0 ]]; do
     ;;
     add)
       shift
-      worktreeRoot=$(cd `git rev-parse --path-format=relative --git-common-dir`/.. && pwd)
-      worktreeDir=$1
-      shift
-      git worktree add $worktreeRoot/$worktreeDir $@
-      test -d $wortreeRoot/.vscode && ln -s $worktreeRoot/.vscode $worktreeRoot/$worktreeDir/.vscode
-      test -f $worktreeRoot/.env && cp $worktreeRoot/.env $worktreeRoot/$worktreeDir/
+      customWorkTreeAdd $@
       shift $#
     ;;
     switch)
@@ -109,12 +135,13 @@ while [[ $# -gt 0 ]]; do
     branch)
       shift
       inMasterWT=$(isMasterWT)
-      if [ $inMasterWT = "true" ]
+      if [ -n "$1" ]
       then
-        echo "You are on master WT just refreshing current WT"
-        git pull
-      elif [ -n "$1" ]
-      then
+        if [ $inMasterWT = "true" ] && [ "$1" = "master" ]
+        then
+          echo "You are on master WT just refreshing current WT"
+          git pull
+        fi
         git fetch
         git checkout -b $1 --no-track origin/master
         shift

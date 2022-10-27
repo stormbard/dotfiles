@@ -13,7 +13,7 @@ if [ -f /Applications/Xcode.app/Contents/Developer/usr/share/git-core/git-comple
 then
     . /Applications/Xcode.app/Contents/Developer/usr/share/git-core/git-completion.bash
 fi
-
+[ -f ~/bin/custom_git.completion.bash ] && . ~/bin/custom_git.completion.bash
 if [ -f ~/.git-prompt.sh ]
 then
     . ~/.git-prompt.sh
