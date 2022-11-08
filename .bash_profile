@@ -4,6 +4,16 @@ PATH=~/bin:$PATH
 PATH="/Library/Frameworks/Python.framework/Versions/2.7/bin:${PATH}"
 export PATH
 
+# Shell Options and History
+# export SHELL_SESSION_HISTORY=0
+export HISTFILESIZE=999999
+export HISTSIZE=999999
+export HISTCONTROL=ignoredups:ignorespace
+shopt -s checkwinsize
+shopt -s progcomp
+shopt -s histappend
+
+
 # GIT prompt and git completion
 if [ -f /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash ]
 then

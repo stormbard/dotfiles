@@ -129,3 +129,30 @@ _wt_branch() {
   __git_complete_refs $dwim_opt --mode="heads"
   return
 }
+
+# Worktree Switch Function and Completion
+wts() {
+  local worktree=$(git worktree list --porcelain | grep -E 'worktree ' | awk '/'"$1"'/ {print; exit}' | cut -d ' ' -f2-)
+  cd $worktree
+}
+
+_wts() {
+  local cur opts
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  local worktrees="$(git worktree list | grep -v '(bare)' |  awk '{ print $1; }' | tr '\n' ' ')"
+  opts=""
+
+  for item in $worktrees; do
+      opts+="$(basename -- "$item") "
+  done
+
+  # Only show suggestions for the root command (wt)
+  # Pass autocompletion suggestion as "words (-W)" to `compgen` separated by space
+  if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]]; then
+      local cur=${COMP_WORDS[COMP_CWORD]}
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "$opts" -- "$cur"))
+  fi
+}
+complete -F _wts wts
