@@ -38,6 +38,9 @@ git_prompt() {
 }
 export PROMPT_COMMAND='__git_ps1 "\h:\w" " \u\$ " " [%s]"'
 
+## Dotfile options
+alias config='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
+___git_complete config __git_main
 
 #export PS1='\h:\w\[\033[1;33m\]$(__git_ps1 " [%s]")\[\033[0m\] \u\$ '
 
@@ -53,7 +56,6 @@ export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # Aliases
 alias flushdns='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
-alias config='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 alias gpg-agent-restart='gpgconf --reload gpg-agent'
 alias sshconfig='vim ~/.ssh/config'
 
