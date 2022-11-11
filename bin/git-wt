@@ -80,7 +80,7 @@ customWorkTreeAdd() {
   worktreeDir=$1
   shift
   git worktree add $gitWorkTreeAddArgs $worktreeRoot/$worktreeDir $@
-  test -d $wortreeRoot/.vscode && ln -s $worktreeRoot/.vscode $worktreeRoot/$worktreeDir/.vscode
+  test -d $worktreeRoot/.vscode && ln -s $worktreeRoot/.vscode $worktreeRoot/$worktreeDir/.vscode
   test -f $worktreeRoot/.env && cp $worktreeRoot/.env $worktreeRoot/$worktreeDir/
 }
 
