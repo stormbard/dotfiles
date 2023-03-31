@@ -1,5 +1,6 @@
 #!/bin/bash
 
+. /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash
 
 ## Gitlab Functions
 _git_gitlab() {

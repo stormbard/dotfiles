@@ -1,4 +1,6 @@
 #!/bin/bash
+shopt -s extglob
+shopt -s dotglob
 # Script to create a bare repo for use with multiple worktrees that track remotes.
 # Reference that was used to create this:
 # https://stackoverflow.com/questions/54367011/git-bare-repositories-worktrees-and-tracking-branches
@@ -51,6 +53,29 @@ cloneForWorkTrees() {
   git config remote.$remoteName.fetch "+refs/heads/*:refs/remotes/$remoteName/*"
   git fetch $remoteName
   git for-each-ref --format='%(refname:short)' refs/heads |  xargs -n1 -I{} git branch --set-upstream-to=$remoteName/{} {}
+}
+
+convertToWorkTreeStructure() {
+  # git diff --quiet || { echo "Stash changes before doing this"; exit 24; }
+  local currentWT=$(git rev-parse --abbrev-ref HEAD)
+  # Set config options
+  git config --local core.bare "true"
+  git config --local core.worktreebare "true"
+
+  # Create new directory structure
+  mv .git .bare
+  echo "gitdir: .bare" > .git
+  #mkdir -p .bare/worktrees/$currentWT
+  mkdir -p ${currentWT}TMP
+
+  # Move files to WT appropriate locations
+  mv -f !(.vscode|.git|.env|.bare|${currentWT}TMP) ${currentWT}TMP
+  git worktree add ${currentWT}
+  cp ${currentWT}/.git ${currentWT}TMP
+  mv .bare/index .bare/worktrees/${currentWT}/index
+  rm -rf ${currentWT}
+  mv ${currentWT}TMP ${currentWT}
+  git worktree repair ${currentWT}
 }
 
 customWorkTreeAdd() {
@@ -115,6 +140,10 @@ while [[ $# -gt 0 ]]; do
       cloneForWorkTrees $@
       shift $#
     ;;
+    convert)
+      convertToWorkTreeStructure
+      shift
+    ;;
     add)
       shift
       customWorkTreeAdd $@
@@ -134,16 +163,17 @@ while [[ $# -gt 0 ]]; do
     ;;
     branch)
       shift
+      defaultBranch=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
       inMasterWT=$(isMasterWT)
       if [ -n "$1" ]
       then
-        if [ $inMasterWT = "true" ] && [ "$1" = "master" ]
+        if [ $inMasterWT = "true" ] && [ "$1" = "$defaultBranch" ]
         then
           echo "You are on master WT just refreshing current WT"
           git pull
         fi
         git fetch
-        git checkout -b $1 --no-track origin/master
+        git checkout -b $1 --no-track origin/${defaultBranch}
         shift
       else
         echo "Provide a new branch name."

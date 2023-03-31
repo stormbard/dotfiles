@@ -1,5 +1,5 @@
 # SETUP Custom $PATH
-PATH=~/bin:$PATH
+PATH=$HOME/.rd/bin:$HOME/bin:$PATH
 # Setting PATH for Python 2.7(Custom Installed to Handle Old NPM deps)
 PATH="/Library/Frameworks/Python.framework/Versions/2.7/bin:${PATH}"
 export PATH
@@ -81,3 +81,6 @@ export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 
 # Work specific files
 test -r ~/.work_profile && test -f ~/.work_profile && . ~/.work_profile
+
+#test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
+
