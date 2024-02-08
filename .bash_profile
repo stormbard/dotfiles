@@ -1,8 +1,14 @@
 # SETUP Custom $PATH
-PATH=$HOME/.rd/bin:$HOME/bin:$PATH
+PATH=$HOME/bin:$PATH
 # Setting PATH for Python 2.7(Custom Installed to Handle Old NPM deps)
-PATH="/Library/Frameworks/Python.framework/Versions/2.7/bin:${PATH}"
+# PATH="/Library/Frameworks/Python.framework/Versions/2.7/bin:${PATH}"
 export PATH
+
+# Homebrew
+export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
+export MANPATH=/opt/homebrew/share/man:$MANPATH
+export LDFLAGS="-L/opt/homebrew/lib $LDFLAGS"
+export CPPFLAGS="-I/opt/homebrew/include $CPPFLAGS"
 
 # Shell Options and History
 # export SHELL_SESSION_HISTORY=0
