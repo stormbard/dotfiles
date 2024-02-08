@@ -20,7 +20,8 @@ createMR() {
 
   # GitLab Specific Push Options: https://docs.gitlab.com/ee/user/project/push_options.html
   # Explanation of the below pipe black magic: https://serverfault.com/questions/989742/tee-and-assigning-to-variable/989827#989827
-  { mergeRequestURL=$(git push -o merge_request.create -o merge_request.target=master $@ --set-upstream "$remoteName" "$branchName" 2>&1 | tee /dev/fd/3 | grep merge_request | cut -d ':' -f2,3 | tr -d ' '); } 3>&1
+  # -o merge_request.target=master
+  { mergeRequestURL=$(git push -o merge_request.create  $@ --set-upstream "$remoteName" "$branchName" 2>&1 | tee /dev/fd/3 | grep merge_request | cut -d ':' -f2,3 | tr -d ' '); } 3>&1
 
   # Open Merge Request URL
   test "$openAfter" = "yes" && $OPENCMD "$mergeRequestURL"
